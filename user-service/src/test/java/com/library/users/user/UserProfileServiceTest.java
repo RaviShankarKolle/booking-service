@@ -1,0 +1,83 @@
+package com.library.users.user;
+
+import com.library.users.exception.ApplicationException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import java.util.Optional;
+import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+class UserProfileServiceTest {
+
+    private UserRepository userRepository;
+    private UserProfileService userProfileService;
+
+    @BeforeEach
+    void setUp() {
+        userRepository = mock(UserRepository.class);
+        userProfileService = new UserProfileService(userRepository);
+    }
+
+    @Test
+    void getCurrentUserProfile_shouldThrowWhenMissing() {
+        when(userRepository.findById(1L)).thenReturn(Optional.empty());
+
+        ApplicationException ex = assertThrows(ApplicationException.class, () -> userProfileService.getCurrentUserProfile(1L));
+
+        assertEquals("USER_NOT_FOUND", ex.getCode());
+    }
+
+    @Test
+    void getCurrentUserProfile_shouldReturnProfileWithRoles() {
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user(1L, "ACTIVE")));
+        when(userRepository.getRoles(1L)).thenReturn(Set.of("USER"));
+
+        UserDtos.UserProfileResponse response = userProfileService.getCurrentUserProfile(1L);
+
+        assertEquals("Alice", response.name());
+        assertEquals(Set.of("USER"), response.roles());
+    }
+
+    @Test
+    void updateCurrentUserProfile_shouldAuditAndReload() {
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user(1L, "ACTIVE")));
+        when(userRepository.getRoles(1L)).thenReturn(Set.of("USER"));
+
+        UserDtos.UpdateProfileRequest request = new UserDtos.UpdateProfileRequest("Alice", "9999999999");
+        UserDtos.UserProfileResponse response = userProfileService.updateCurrentUserProfile(1L, request, "127.0.0.1", "JUnit");
+
+        assertEquals("Alice", response.name());
+        verify(userRepository).updateProfile(1L, "Alice", "9999999999");
+        verify(userRepository).auditLog(1L, "UPDATE_PROFILE", "127.0.0.1", "JUnit");
+    }
+
+    @Test
+    void getUserEligibility_shouldReturnUserNotActive() {
+        when(userRepository.findById(2L)).thenReturn(Optional.of(user(2L, "INACTIVE")));
+
+        UserDtos.UserEligibilityResponse response = userProfileService.getUserEligibility(2L);
+
+        assertEquals(false, response.eligible());
+        assertEquals("USER_NOT_ACTIVE", response.reason());
+    }
+
+    @Test
+    void getNotificationContact_shouldReturnMinimalProfile() {
+        when(userRepository.findById(3L)).thenReturn(Optional.of(user(3L, "ACTIVE")));
+
+        UserDtos.UserNotificationContactResponse response = userProfileService.getNotificationContact(3L);
+
+        assertEquals("alice@example.com", response.email());
+        assertEquals("Alice", response.name());
+    }
+
+    private static UserRepository.UserRecord user(Long id, String status) {
+        return new UserRepository.UserRecord(id, "Alice", "alice@example.com", "9999999999", "hash", status);
+    }
+}
