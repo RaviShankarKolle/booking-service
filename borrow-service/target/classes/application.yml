@@ -1,0 +1,53 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: borrow-service
+  datasource:
+    url: jdbc:mysql://localhost:3306/library_borrow_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  cloud:
+    openfeign:
+      client:
+        config:
+          default:
+            connectTimeout: 3000
+            readTimeout: 12000
+
+security:
+  jwt:
+    secret: ThisIsADevelopmentOnlySecretKeyForJwtSigning12345
+
+# Overdue job schedule (Spring 6-field cron: sec min hour day month weekday).
+# LOCAL TEST (every 2 minutes): overdue-cron: "0 */2 * * * *"
+# LOCAL TEST (every minute):    overdue-cron: "0 * * * * *"
+# PRODUCTION (daily 1:00 AM):     overdue-cron: "0 0 1 * * *"
+borrow:
+  scheduler:
+    overdue-cron: "0 */2 * * * *"
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka
+  instance:
+    prefer-ip-address: true
+    hostname: localhost
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
