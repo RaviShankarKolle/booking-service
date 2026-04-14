@@ -1,0 +1,94 @@
+server:
+
+  port: 8085
+
+
+
+spring:
+
+  application:
+
+    name: fine-payment-service
+
+  datasource:
+
+    url: jdbc:mysql://localhost:3306/library_fine_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+
+    username: root
+
+    password: root
+
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  sql:
+
+    init:
+
+      mode: always
+
+      schema-locations: classpath:db/migration/V1__fine_payment_schema.sql
+
+  cloud:
+
+    openfeign:
+
+      client:
+
+        config:
+
+          default:
+
+            connectTimeout: 3000
+
+            readTimeout: 12000
+
+
+
+security:
+
+  jwt:
+
+    secret: ThisIsADevelopmentOnlySecretKeyForJwtSigning12345
+
+    expiration-minutes: 120
+
+
+
+eureka:
+
+  client:
+
+    service-url:
+
+      defaultZone: http://localhost:8761/eureka
+
+  instance:
+
+    prefer-ip-address: true
+
+    hostname: localhost
+
+
+
+springdoc:
+
+  api-docs:
+
+    path: /v3/api-docs
+
+  swagger-ui:
+
+    path: /swagger-ui.html
+
+
+
+management:
+
+  endpoints:
+
+    web:
+
+      exposure:
+
+        include: health,info
+

@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.library.fine.fine.FineServiceTest
+-------------------------------------------------------------------------------
+Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.020 s -- in com.library.fine.fine.FineServiceTest
