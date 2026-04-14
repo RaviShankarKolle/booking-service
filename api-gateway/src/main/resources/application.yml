@@ -1,0 +1,112 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      # Lets browsers call http://localhost:8080/... (e.g. SPA or Swagger UI on another origin).
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOriginPatterns: "*"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+              - PATCH
+            allowedHeaders: "*"
+            allowCredentials: false
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+      routes:
+        # Swagger / OpenAPI per microservice (browser): http://localhost:8080/docs/{service-id}/swagger-ui.html
+        # StripPrefix=2 removes "docs" + "{service-id}" so downstream receives /swagger-ui... and /v3/api-docs...
+        - id: docs-user-service
+          uri: lb://user-service
+          order: -1
+          predicates:
+            - Path=/docs/user-service/**
+          filters:
+            - StripPrefix=2
+            - AddRequestHeader=X-Forwarded-Prefix, /docs/user-service
+        - id: docs-book-service
+          uri: lb://book-service
+          order: -1
+          predicates:
+            - Path=/docs/book-service/**
+          filters:
+            - StripPrefix=2
+            - AddRequestHeader=X-Forwarded-Prefix, /docs/book-service
+        - id: docs-borrow-service
+          uri: lb://borrow-service
+          order: -1
+          predicates:
+            - Path=/docs/borrow-service/**
+          filters:
+            - StripPrefix=2
+            - AddRequestHeader=X-Forwarded-Prefix, /docs/borrow-service
+        - id: docs-fine-payment-service
+          uri: lb://fine-payment-service
+          order: -1
+          predicates:
+            - Path=/docs/fine-payment-service/**
+          filters:
+            - StripPrefix=2
+            - AddRequestHeader=X-Forwarded-Prefix, /docs/fine-payment-service
+        - id: docs-notification-service
+          uri: lb://notification-service
+          order: -1
+          predicates:
+            - Path=/docs/notification-service/**
+          filters:
+            - StripPrefix=2
+            - AddRequestHeader=X-Forwarded-Prefix, /docs/notification-service
+        # Lower order = higher priority. Specific paths must win over user-service catch-all (/api/v1/**).
+        - id: book-service-route
+          uri: lb://book-service
+          order: 0
+          predicates:
+            - Path=/api/v1/books/**
+        - id: borrow-service-route
+          uri: lb://borrow-service
+          order: 1
+          predicates:
+            - Path=/api/v1/borrows/**
+        - id: fine-payment-service-route
+          uri: lb://fine-payment-service
+          order: 2
+          predicates:
+            - Path=/api/v1/fines/**
+        - id: notification-service-route
+          uri: lb://notification-service
+          order: 3
+          predicates:
+            - Path=/api/v1/notifications/**
+        - id: user-service-route
+          uri: lb://user-service
+          order: 100
+          predicates:
+            # API only; Swagger UI via gateway: /docs/{service-id}/swagger-ui.html
+            - Path=/api/v1/**
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka
+
+security:
+  jwt:
+    # Replace with secure externalized secret for non-dev use.
+    secret: ThisIsADevelopmentOnlySecretKeyForJwtSigning12345
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

@@ -1,0 +1,3 @@
+com\library\gateway\security\JwtTokenValidator.class
+com\library\gateway\ApiGatewayApplication.class
+com\library\gateway\security\JwtGatewayFilter.class
